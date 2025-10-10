@@ -1,0 +1,95 @@
+<!-- Navigation -->
+<nav class="navbar">
+  <div class="nav-container">
+    <div class="logo">
+      <div class="logo-icon">$</div>
+      <span class="logo-text">PayFlow</span>
+    </div>
+
+    <div class="menu desktop-menu">
+      <a (click)="scrollToSection('home')">Home</a>
+      <a (click)="scrollToSection('features')">Features</a>
+      <button (click)="navigateToLogin()">Login</button>
+      <button (click)="navigateToRegister()">Register</button>
+    </div>
+
+    <button class="mobile-menu-btn" (click)="toggleMobileMenu()">
+      <span *ngIf="!mobileMenuOpen">&#9776;</span>
+      <span *ngIf="mobileMenuOpen">&times;</span>
+    </button>
+  </div>
+
+  <!-- Mobile Menu -->
+  <div *ngIf="mobileMenuOpen" class="mobile-menu">
+    <a (click)="scrollToSection('home')">Home</a>
+    <a (click)="scrollToSection('features')">Features</a>
+    <a (click)="scrollToSection('roles')">Roles</a>
+    <a (click)="scrollToSection('contact')">Contact</a>
+    <button (click)="navigateToLogin()">Login</button>
+    <button (click)="navigateToRegister()">Register</button>
+  </div>
+</nav>
+
+<!-- Hero Section -->
+<section id="home" class="hero">
+  <h1>
+    Streamline Your
+    <span>Payment & Payroll</span>
+  </h1>
+  <p>
+    Secure, efficient, and transparent payroll management system for organizations, employees, and banks
+  </p>
+
+  <div class="role-selection">
+    <button (click)="selectRole('organization')" [class.active]="selectedRole==='organization'">Organization</button>
+    <button (click)="selectRole('employee')" [class.active]="selectedRole==='employee'">Employee</button>
+    <button (click)="selectRole('bank')" [class.active]="selectedRole==='bank'">Bank Admin</button>
+
+    <div class="role-content">
+      <h3>{{ getRoleContent().title }}</h3>
+      <ul>
+        <li *ngFor="let feature of getRoleContent().features">
+          &#10148; {{ feature }}
+        </li>
+      </ul>
+    </div>
+
+    <button class="action-btn" (click)="handleAction()">
+      {{ selectedRole==='organization' ? 'Register Organization' : 'Login Now' }}
+    </button>
+  </div>
+</section>
+
+<!-- Features Section -->
+<section id="features" class="features">
+  <h2>Powerful Features</h2>
+  <p>Everything you need for comprehensive payroll and payment management</p>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">S</div>
+      <h3>Secure & Compliant</h3>
+      <p>JWT authentication, BCrypt encryption, and CAPTCHA protection ensure your data stays safe</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">M</div>
+      <h3>Multi-Role Support</h3>
+      <p>Dedicated portals for banks, organizations, and employees</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">A</div>
+      <h3>Advanced Reporting</h3>
+      <p>Generate detailed reports in PDF and Excel with customizable filters and date ranges</p>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-logo">
+    <div class="footer-icon">$</div>
+    <span class="footer-text">PayFlow</span>
+  </div>
+  <p>© 2025 PayFlow Management System. All rights reserved.</p>
+  <p class="footer-subtext">Prepared by Anshika and Nihal Team | Version 1.1</p>
+</footer>

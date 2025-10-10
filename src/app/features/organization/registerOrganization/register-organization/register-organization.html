@@ -1,0 +1,73 @@
+<div class="register-container">
+  <h2>Organization Registration</h2>
+  <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+    <div>
+      <label>Organization Name</label>
+      <input formControlName="orgName" />
+      <small *ngIf="registerForm.get('orgName')?.invalid && registerForm.get('orgName')?.touched">
+        Name is required (3-100 chars)
+      </small>
+    </div>
+
+    <div>
+      <label>Registration Number</label>
+      <input formControlName="registrationNo" />
+      <small *ngIf="registerForm.get('registrationNo')?.invalid && registerForm.get('registrationNo')?.touched">
+        Required (5-20 chars)
+      </small>
+    </div>
+
+    <div>
+      <label>Address</label>
+      <input formControlName="address" />
+      <small *ngIf="registerForm.get('address')?.invalid && registerForm.get('address')?.touched">
+        Minimum 10 characters
+      </small>
+    </div>
+
+    <div>
+      <label>Contact Number</label>
+      <input formControlName="contactNo" />
+      <small *ngIf="registerForm.get('contactNo')?.invalid && registerForm.get('contactNo')?.touched">
+        Must be 10 digits
+      </small>
+    </div>
+
+    <div>
+      <label>Email</label>
+      <input formControlName="email" type="email" />
+      <small *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched">
+        Enter a valid email
+      </small>
+    </div>
+
+    <div>
+      <label>Username</label>
+      <input formControlName="username" />
+      <small *ngIf="registerForm.get('username')?.invalid && registerForm.get('username')?.touched">
+        4-10 letters or numbers only
+      </small>
+    </div>
+
+    <div>
+      <label>Password</label>
+      <input formControlName="password" type="password" />
+      <small *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
+        Min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char
+      </small>
+    </div>
+
+    <div>
+      <label>Confirm Password</label>
+      <input formControlName="confirmPassword" type="password" />
+      <small *ngIf="registerForm.errors?.mismatch && registerForm.get('confirmPassword')?.touched">
+        Passwords do not match
+      </small>
+    </div>
+
+    <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
+    <div *ngIf="successMessage" class="success">{{ successMessage }}</div>
+
+    <button type="submit">Register</button>
+  </form>
+</div>
