@@ -1,0 +1,102 @@
+<p>admin-dashboard-component works!</p>
+ <div class="dashboard-container">
+      <!-- Header -->
+      <header class="dashboard-header">
+        <div class="header-content">
+          <div class="logo-section">
+            <div class="logo">💰</div>
+            <h1>PayFlow Bank Admin</h1>
+          </div>
+          <div class="user-section">
+            <span class="user-info">
+              <span class="user-icon">👤</span>
+              {{ userEmail }}
+            </span>
+            <button class="logout-btn" (click)="logout()">
+              Logout
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="dashboard-main">
+        <!-- Welcome Card -->
+        <div class="welcome-card">
+          <h2>Welcome to Bank Admin Dashboard! 🎉</h2>
+          <p>Login successful! You are authenticated as <strong>BANK_ADMIN</strong></p>
+          <div class="status-badge">
+            <span class="badge success">✓ Verified</span>
+            <span class="badge info">User ID: {{ userId }}</span>
+          </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">🏦</div>
+            <div class="stat-details">
+              <h3>Total Organizations</h3>
+              <p class="stat-value">156</p>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-details">
+              <h3>Active Users</h3>
+              <p class="stat-value">2,847</p>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon">💳</div>
+            <div class="stat-details">
+              <h3>Transactions Today</h3>
+              <p class="stat-value">1,234</p>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-details">
+              <h3>Pending Approvals</h3>
+              <p class="stat-value">23</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="actions-section">
+          <h3>Quick Actions</h3>
+          <div class="action-buttons">
+            <button class="action-btn primary">
+              <span class="btn-icon">➕</span>
+              Add Organization
+            </button>
+            <button class="action-btn secondary">
+              <span class="btn-icon">✓</span>
+              Approve Pending
+            </button>
+            <button class="action-btn secondary">
+              <span class="btn-icon">📊</span>
+              View Reports
+            </button>
+            <button class="action-btn secondary">
+              <span class="btn-icon">⚙️</span>
+              Settings
+            </button>
+          </div>
+        </div>
+
+        <!-- User Roles Info -->
+        <div class="roles-card">
+          <h3>Your Roles</h3>
+          <div class="roles-list">
+            <span class="role-badge" *ngFor="let role of userRoles">
+              {{ role }}
+            </span>
+          </div>
+        </div>
+      </main>
+    </div>
