@@ -48,7 +48,7 @@ export class LoginComponent implements OnInit {
       return;
     }
 
-    this.isLoading = true;
+    this.isLoading = false;
 
     const credentials: LoginRequest = {
       userName: this.loginForm.value.userName,
