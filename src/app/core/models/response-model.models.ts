@@ -1,6 +1,6 @@
-// RESPONSE MODELS
+// response-model.models.ts
 
-
+// GENERIC
 export interface PagedResponse<T> {
   content: T[];
   pageNumber: number;
@@ -10,22 +10,17 @@ export interface PagedResponse<T> {
   lastPage: boolean;
 }
 
+// AUTH
 export interface LoginResponse {
   token: string;
   userId: number;
   email: string;
   roles: string[];
-  status: string; // PENDING | VERIFIED
+  status: string;
   message: string;
 }
 
-export interface EmployeeRegisterResponse {
-  employeeId: number;
-  username: string;
-  temporaryPassword: string;
-  status: string;
-}
-
+// ORGANIZATION REGISTRATION
 export interface OrgRegisterResponse {
   orgId: number;
   orgName: string;
@@ -34,12 +29,119 @@ export interface OrgRegisterResponse {
   status: string;
 }
 
-export interface EmployeeBankDetailsResponse {
-  employeeId: number;
-  accountHolderName: string;
-  bankName: string;
-  verificationStatus: string;
+// ORGANIZATION DOCUMENTS & BANK
+export interface OrganizationDocument {
+  docId: number;
+  docName: string;
+  fileName: string;
+  fileUrl: string;
+  fileType: string;
+  status: string;
+  uploadedAt: Date;
+  verifiedAt?: Date;
+}
+
+export interface DocumentSummary {
+  documentName: string;
+  fileType: string;
+  status: string;
+  rejectionReason?: string;
+}
+
+export interface BankAdminOrgRegisterResponse {
+  orgId: number;
+  orgName: string;
+  email: string;
+  status: string;
   message: string;
+  documents: OrganizationDocument[];
+  bankVerificationStatus: string;
+  bankRemarks?: string;
+}
+
+export interface OrganizationOnboardingStatus {
+  organizationId: number;
+  organizationName: string;
+  organizationStatus: string;
+  documentStage: string;
+  totalDocuments: number;
+  approvedDocuments: number;
+  rejectedDocuments: number;
+  pendingDocuments: number;
+  missingDocuments: string[];
+  bankStage: string;
+  bankRejectionReason?: string;
+  bankVerifiedBy?: string;
+  bankVerifiedAt?: Date;
+  documents: DocumentSummary[];
+  onboardingProgress: string;
+  message: string;
+}
+
+// EMPLOYEE REGISTRATION & DETAILS
+export interface EmployeeRegisterResponse {
+  employeeId: number;
+  username: string;
+  temporaryPassword: string;
+  status: string;
+}
+
+export interface EmployeeListResponse {
+  employeeId: number;
+  employeeName: string;
+  email: string;
+  status: string;
+  allDocumentsApproved: boolean;
+  bankApproved: boolean;
+  documentCompletion: number;
+}
+
+export interface EmployeeDetailResponse {
+  employeeId: number;
+  name: string;
+  status: string;
+  documents: DocumentReview[];
+  bankDetails: BankReview;
+}
+
+export interface EmployeeOnboardingStatus {
+  employeeId: number;
+  name: string;
+  status: string;
+  overallProgress: number;
+  statusMessage: string;
+  isComplete: boolean;
+  approvedDocuments: number;
+  rejectedDocuments: number;
+  pendingDocuments: number;
+  missingDocuments: string[];
+  bankDetailsSubmitted: boolean;
+  bankStatus: string;
+  nextSteps: OnboardingStep[];
+}
+
+export interface OnboardingStep {
+  priority: string;
+  action: string;
+  description: string;
+  endpoint: string;
+}
+
+export interface EmployeeBulkRegisterResponse {
+  successfulRegistrations: EmployeeRegisterResponse[];
+  failedRegistrations: string[];
+}
+
+// EMPLOYEE DOCUMENTS & BANK
+export interface DocumentReview {
+  documentId: number;
+  type: string;
+  fileName: string;
+  fileUrl: string;
+  status: string;
+  rejectionReason?: string;
+  uploadedAt: Date;
+  actionRequired?: string;
 }
 
 export interface DocumentUploadResponse {
@@ -48,7 +150,7 @@ export interface DocumentUploadResponse {
   currentStatus: string;
   uploadedDocuments: DocumentUploadResult[];
   failedDocuments: string[];
-  overallResult: string; // SUCCESS | PARTIAL | FAILED
+  overallResult: string;
   message: string;
 }
 
@@ -60,10 +162,69 @@ export interface DocumentUploadResult {
   message: string;
 }
 
+export interface BankReview {
+  accountHolderName: string;
+  accountNumberMasked: string;
+  bankName: string;
+  ifscCode: string;
+  branchName?: string;
+  status: string;
+  rejectionReason?: string;
+  submittedAt: Date;
+}
+
+export interface EmployeeBankDetailsResponse {
+  employeeId: number;
+  accountHolderName: string;
+  bankName: string;
+  verificationStatus: string;
+  message: string;
+}
+
+export interface VerificationResponse {
+  employeeId: number;
+  message: string;
+  currentStatus: string;
+}
+
+// SALARY MANAGEMENT
+export interface DesignationResponse {
+  designationId: number;
+  name: string;
+}
+
+export interface SalaryTemplateResponse {
+  salaryTemplateId: number;
+  designationId: number;
+  designationName: string;
+  message: string;
+}
+
+export interface SalaryTemplateDetailResponse {
+  salaryTemplateId: number;
+  designation: string;
+  basicSalary: number;
+  hra: number;
+  da: number;
+  pf: number;
+  otherAllowances: number;
+  grossSalary: number;
+  netSalary: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SalaryTemplateSummaryResponse {
+  templateId: number;
+  designation: string;
+  grossSalary: number;
+  netSalary: number;
+}
+
 export interface PaymentRequestList {
   paymentId: number;
   organizationName: string;
-  requestType: string; // PaymentRequestType enum
+  requestType: string;
   status: string;
   amount: number;
   description: string;
@@ -135,169 +296,4 @@ export interface PayrollSubmitResponse {
   message: string;
   paymentRequestId: number;
   status: string;
-}
-
-export interface SalaryTemplateResponse {
-  salaryTemplateId: number;
-  designationId: number;
-  designationName: string;
-  message: string;
-}
-
-export interface SalaryTemplateDetailResponse {
-  salaryTemplateId: number;
-  designation: string;
-  basicSalary: number;
-  hra: number;
-  da: number;
-  pf: number;
-  otherAllowances: number;
-  grossSalary: number;
-  netSalary: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface SalaryTemplateSummaryResponse {
-  templateId: number;
-  designation: string;
-  grossSalary: number;
-  netSalary: number;
-}
-
-export interface VerificationResponse {
-  employeeId: number;
-  message: string;
-  currentStatus: string;
-}
-
-export interface EmployeeDetailResponse {
-  employeeId: number;
-  name: string;
-  status: string;
-  documents: DocumentReview[];
-  bankDetails: BankReview;
-}
-
-export interface EmployeeListResponse {
-  employeeId: number;
-  employeeName: string;
-  email: string;
-  status: string;
-  allDocumentsApproved: boolean;
-  bankApproved: boolean;
-  documentCompletion: number;
-}
-
-export interface EmployeeOnboardingStatus {
-  employeeId: number;
-  name: string;
-  status: string;
-  overallProgress: number;
-  statusMessage: string;
-  isComplete: boolean;
-  approvedDocuments: number;
-  rejectedDocuments: number;
-  pendingDocuments: number;
-  missingDocuments: string[];
-  bankDetailsSubmitted: boolean;
-  bankStatus: string;
-  nextSteps: OnboardingStep[];
-}
-
-export interface OnboardingStep {
-  priority: string; // HIGH | INFO
-  action: string;
-  description: string;
-  endpoint: string;
-}
-
-export interface EmployeeBulkRegisterResponse {
-  successfulRegistrations: EmployeeRegisterResponse[];
-  failedRegistrations: string[];
-}
-
-export interface DocumentReview {
-  documentId: number;
-  type: string;
-  fileName: string;
-  fileUrl: string;
-  status: string;
-  rejectionReason?: string;
-  uploadedAt: Date;
-  actionRequired?: string;
-}
-
-export interface BankReview {
-  accountHolderName: string;
-  accountNumberMasked: string;
-  bankName: string;
-  ifscCode: string;
-  branchName?: string;
-  status: string;
-  rejectionReason?: string;
-  submittedAt: Date;
-}
-
-export interface DesignationResponse {
-  designationId: number;
-  name: string;
-}
-
-export interface DocumentSummary {
-  documentName: string;
-  fileType: string;
-  status: string;
-  rejectionReason?: string;
-}
-
-export interface OrganizationOnboardingResponse {
-  orgId: number;
-  orgName: string;
-  documentUploaded: boolean;
-  bankDetailsProvided: boolean;
-  status: string;
-  message: string;
-}
-
-export interface OrganizationOnboardingStatus {
-  organizationId: number;
-  organizationName: string;
-  organizationStatus: string; // PENDING | UNDER_REVIEW | ACTIVE | REJECTED
-  documentStage: string; // NOT_UPLOADED | UPLOADED | UNDER_REVIEW | APPROVED | REJECTED
-  totalDocuments: number;
-  approvedDocuments: number;
-  rejectedDocuments: number;
-  pendingDocuments: number;
-  missingDocuments: string[];
-  bankStage: string; // NOT_PROVIDED | PROVIDED | UNDER_REVIEW | APPROVED | REJECTED
-  bankRejectionReason?: string;
-  bankVerifiedBy?: string;
-  bankVerifiedAt?: Date;
-  documents: DocumentSummary[];
-  onboardingProgress: string;
-  message: string;
-}
-
-export interface OrganizationDocument {
-  fileName: string;
-  fileUrl: string;
-  fileType: string;
-  status: string;
-  uploadedAt: Date;
-  verifiedAt?: Date;
-}
-
-export interface BankAdminOrgRegisterResponse {
-  orgId: number;
-  orgName: string;
-  email: string;
-  status: string;
-  message: string;
-  documents: OrganizationDocument[];
-  bankVerificationStatus: string; // PENDING | APPROVED | REJECTED
-  bankRemarks?: string;
-}
-
-export interface ResponseModel {
 }
