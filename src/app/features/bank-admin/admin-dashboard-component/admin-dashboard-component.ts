@@ -1,6 +1,6 @@
 // admin-dashboard.component.ts
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil, finalize } from 'rxjs/operators';
@@ -14,7 +14,7 @@ import {
   PaymentRequestDetail,
   PaymentRequestPageResponse
 } from '../../../core/models/response-model.models';
-import { PaymentRequestFilter, RejectRequest } from '../../../core/models/request-model.models';
+import { PaymentRequestFilter } from '../../../core/models/request-model.models';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -25,15 +25,13 @@ import { PaymentRequestFilter, RejectRequest } from '../../../core/models/reques
 })
 export class AdminDashboardComponent implements OnInit, OnDestroy {
 
-  cdr = inject(ChangeDetectorRef);
-
-
   userEmail: string = '';
   userId: number = 0;
   userRoles: string[] = [];
 
   activeTab: string = 'overview';
   loading: boolean = false;
+  processingAction: boolean = false;
 
   // Organizations
   allOrganizations: BankAdminOrgRegisterResponse[] = [];
@@ -80,7 +78,6 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.initializeUserInfo();
     this.loadDashboardData();
-    this.cdr.detectChanges();
   }
 
   ngOnDestroy(): void {
@@ -88,7 +85,6 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  // Initialize user
   private initializeUserInfo(): void {
     const authUserInfo = this.authService.getUserInfo();
     if (authUserInfo) {
@@ -103,7 +99,6 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.router.navigate(['/login']);
   }
 
-  // Tab management
   switchTab(tab: string): void {
     this.activeTab = tab;
     this.selectedOrganization = null;
@@ -111,28 +106,25 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
     if (tab === 'organizations') {
       this.orgFilter = 'ALL';
-      this.fetchAllOrganizations();
+      this.applyOrgFilter();
     } else if (tab === 'payment') {
       this.resetPaymentFilters();
     }
   }
 
-  // Load initial data
   private loadDashboardData(): void {
     this.fetchAllOrganizations();
     this.fetchPaymentRequests();
   }
 
-  // Organizations - FIXED with finalize
   private fetchAllOrganizations(): void {
     this.loading = true;
-    console.log('Fetching organizations...');
     this.bankAdminService.getAllOrganizations()
       .pipe(
         takeUntil(this.destroy$),
         finalize(() => {
-          this.loading = false; // ✅ Always stops loading
-          console.log('Loading finished');
+          this.loading = false;
+          console.log('Organizations loaded');
         })
       )
       .subscribe({
@@ -178,79 +170,121 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.currentOrgId = org.orgId;
   }
 
+  // Check if organization has bank details
+  hasBankDetails(org: BankAdminOrgRegisterResponse | null): boolean {
+    if (!org) return false;
+    // Check if bankDetailsProvided flag is true, or if individual bank fields are populated
+    const hasBankFlag = (org as any).bankDetailsProvided === true;
+    const hasIndividualFields = !!(org.accountHolderName && org.accountNumber && org.ifscCode && org.bankName);
+    return hasBankFlag || hasIndividualFields;
+  }
+
+  // Mask account number for security
+  maskAccountNumber(accountNumber: string | undefined | null): string {
+    if (!accountNumber || accountNumber.length <= 4) {
+      return accountNumber || '';
+    }
+    const lastFour = accountNumber.slice(-4);
+    const maskedPortion = '*'.repeat(accountNumber.length - 4);
+    return `${maskedPortion}${lastFour}`;
+  }
+
+  // Check if all documents are approved
+  areAllDocumentsApproved(org: BankAdminOrgRegisterResponse | null): boolean {
+    if (!org || !org.documents || org.documents.length === 0) return false;
+    return org.documents.every(doc => doc.status === 'APPROVED');
+  }
+
+  // Check if organization can be verified (documents + bank approved)
+  canVerifyOrganization(org: BankAdminOrgRegisterResponse | null): boolean {
+    if (!org) return false;
+    const docsApproved = this.areAllDocumentsApproved(org);
+    const bankApproved = org.bankVerificationStatus === 'APPROVED';
+    return docsApproved && bankApproved;
+  }
+
   verifyOrganization(orgId: number): void {
-    if (!confirm('Verify this organization?')) return;
-    this.loading = true;
+    if (!confirm('Are you sure you want to verify and activate this organization?')) return;
+    
+    this.processingAction = true;
 
     this.bankAdminService.verifyOrganization(orgId)
       .pipe(
         takeUntil(this.destroy$),
-        finalize(() => this.loading = false)
+        finalize(() => this.processingAction = false)
       )
       .subscribe({
         next: (res) => {
-          this.showAlert('Organization verified');
+          this.showAlert('✅ Organization verified successfully!');
           this.fetchAllOrganizations();
           this.selectedOrganization = null;
         },
         error: (err) => {
           console.error(err);
-          this.showAlert('Failed to verify');
+          this.showAlert('❌ Failed to verify organization: ' + (err?.error?.message || 'Unknown error'));
         }
       });
   }
 
   verifyDocument(docId: number): void {
+    if (!confirm('Are you sure you want to approve this document?')) return;
     if (!this.selectedOrganization) return;
-    this.loading = true;
+    
+    this.processingAction = true;
 
     this.bankAdminService.verifyDocument(this.selectedOrganization.orgId, docId)
       .pipe(
         takeUntil(this.destroy$),
-        finalize(() => this.loading = false)
+        finalize(() => this.processingAction = false)
       )
       .subscribe({
         next: () => {
-          this.showAlert('Document verified');
+          this.showAlert('✅ Document approved successfully!');
           this.fetchAllOrganizations();
         },
         error: (err) => {
           console.error(err);
-          this.showAlert('Failed to verify document');
+          this.showAlert('❌ Failed to approve document: ' + (err?.error?.message || 'Unknown error'));
         }
       });
   }
 
   verifyBankDetails(): void {
+    if (!confirm('Are you sure you want to approve bank details?')) return;
     if (!this.selectedOrganization) return;
-    this.loading = true;
+    
+    this.processingAction = true;
 
     this.bankAdminService.verifyBankDetails(this.selectedOrganization.orgId)
       .pipe(
         takeUntil(this.destroy$),
-        finalize(() => this.loading = false)
+        finalize(() => this.processingAction = false)
       )
       .subscribe({
         next: () => {
-          this.showAlert('Bank details verified');
+          this.showAlert('✅ Bank details approved successfully!');
           this.fetchAllOrganizations();
         },
         error: (err) => {
           console.error(err);
-          this.showAlert('Failed to verify bank details');
+          this.showAlert('❌ Failed to approve bank details: ' + (err?.error?.message || 'Unknown error'));
         }
       });
   }
 
-  // Payments - FIXED with finalize
+  viewDocument(fileUrl: string): void {
+    if (!fileUrl) {
+      this.showAlert('Document URL not available');
+      return;
+    }
+    window.open(fileUrl, '_blank');
+  }
+
   private fetchPaymentRequests(): void {
-    // Don't show main loading spinner for background fetch
     this.bankAdminService.getFilteredPaymentRequests(this.paymentFilters)
       .pipe(
         takeUntil(this.destroy$),
-        finalize(() => {
-          console.log('Payment requests fetch completed');
-        })
+        finalize(() => console.log('Payment requests loaded'))
       )
       .subscribe({
         next: (res) => {
@@ -268,63 +302,61 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   selectPaymentRequest(paymentId: number): void {
-    this.loading = true;
     this.bankAdminService.getPaymentRequestDetail(paymentId)
-      .pipe(
-        takeUntil(this.destroy$),
-        finalize(() => this.loading = false)
-      )
+      .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
           this.selectedPaymentRequest = res;
         },
         error: (err) => {
           console.error(err);
-          this.showAlert('Failed to load payment details');
+          this.showAlert('Failed to load payment details: ' + (err?.error?.message || 'Unknown error'));
         }
       });
   }
 
   approvePayment(paymentId: number): void {
-    if (!confirm('Approve this payment?')) return;
-    this.loading = true;
+    if (!confirm('Are you sure you want to approve this payment request?')) return;
+    
+    this.processingAction = true;
 
     this.bankAdminService.approvePaymentRequest(paymentId)
       .pipe(
         takeUntil(this.destroy$),
-        finalize(() => this.loading = false)
+        finalize(() => this.processingAction = false)
       )
       .subscribe({
         next: () => {
-          this.showAlert('Payment approved');
+          this.showAlert('✅ Payment approved successfully!');
           this.fetchPaymentRequests();
           this.selectedPaymentRequest = null;
         },
         error: (err) => {
           console.error(err);
-          this.showAlert('Failed to approve payment');
+          this.showAlert('❌ Failed to approve payment: ' + (err?.error?.message || 'Unknown error'));
         }
       });
   }
 
   disbursePayment(paymentId: number): void {
-    if (!confirm('Disburse this payment?')) return;
-    this.loading = true;
+    if (!confirm('Are you sure you want to disburse this payment?')) return;
+    
+    this.processingAction = true;
 
     this.bankAdminService.disbursePayment(paymentId)
       .pipe(
         takeUntil(this.destroy$),
-        finalize(() => this.loading = false)
+        finalize(() => this.processingAction = false)
       )
       .subscribe({
         next: () => {
-          this.showAlert('Payment disbursed');
+          this.showAlert('✅ Payment disbursed successfully!');
           this.fetchPaymentRequests();
           this.selectedPaymentRequest = null;
         },
         error: (err) => {
           console.error(err);
-          this.showAlert('Failed to disburse payment');
+          this.showAlert('❌ Failed to disburse payment: ' + (err?.error?.message || 'Unknown error'));
         }
       });
   }
@@ -362,7 +394,6 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.fetchPaymentRequests();
   }
 
-  // Rejection Modal
   openRejectModal(type: string, targetId: number, docId: number = 0): void {
     this.rejectType = type;
     this.rejectTargetId = targetId;
@@ -373,31 +404,36 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   closeRejectModal(): void {
     this.showRejectModal = false;
+    this.rejectReason = '';
   }
 
   submitReject(): void {
     if (!this.rejectReason.trim()) {
-      this.showAlert('Please provide a reason');
+      this.showAlert('⚠️ Please provide a reason for rejection');
       return;
     }
 
-    this.loading = true;
+    if (!confirm('Are you sure you want to reject this? This action will notify the organization.')) {
+      return;
+    }
+
+    this.processingAction = true;
     const handler = this.getRejectHandler();
 
     if (handler) {
       handler.pipe(
         takeUntil(this.destroy$),
-        finalize(() => this.loading = false)
+        finalize(() => this.processingAction = false)
       )
         .subscribe({
           next: () => {
-            this.showAlert('Rejected successfully');
+            this.showAlert('✅ Rejected successfully!');
             this.closeRejectModal();
             this.refreshAfterAction();
           },
           error: (err: any) => {
             console.error(err);
-            this.showAlert('Failed to reject');
+            this.showAlert('❌ Failed to reject: ' + (err?.error?.message || 'Unknown error'));
           }
         });
     }
@@ -434,7 +470,9 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       'UNDER_REVIEW': 'badge-info',
       'ACTIVE': 'badge-success',
       'REJECTED': 'badge-danger',
-      'APPROVED': 'badge-success'
+      'APPROVED': 'badge-success',
+      'NOT_SUBMITTED': 'badge-secondary',
+      'DISBURSED': 'badge-success'
     };
     return map[status] || 'badge-secondary';
   }

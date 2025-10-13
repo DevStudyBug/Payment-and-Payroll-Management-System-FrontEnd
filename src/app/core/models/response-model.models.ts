@@ -29,7 +29,7 @@ export interface OrgRegisterResponse {
   status: string;
 }
 
-// ORGANIZATION DOCUMENTS & BANK
+// ORGANIZATION DOCUMENTS
 export interface OrganizationDocument {
   docId: number;
   docName: string;
@@ -48,6 +48,7 @@ export interface DocumentSummary {
   rejectionReason?: string;
 }
 
+// BANK ADMIN ORG RESPONSE - Updated to match backend API
 export interface BankAdminOrgRegisterResponse {
   orgId: number;
   orgName: string;
@@ -57,6 +58,11 @@ export interface BankAdminOrgRegisterResponse {
   documents: OrganizationDocument[];
   bankVerificationStatus: string;
   bankRemarks?: string;
+  // Bank account details from backend (flat structure)
+  accountHolderName?: string;
+  accountNumber?: string;
+  ifscCode?: string;
+  bankName?: string;
 }
 
 export interface OrganizationOnboardingStatus {
@@ -221,6 +227,7 @@ export interface SalaryTemplateSummaryResponse {
   netSalary: number;
 }
 
+// PAYMENT REQUESTS
 export interface PaymentRequestList {
   paymentId: number;
   organizationName: string;
