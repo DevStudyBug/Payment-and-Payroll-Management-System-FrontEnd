@@ -36,6 +36,10 @@ export class AuthService {
       );
   }
 
+  registerOrganization(formData: any): Observable<any> {
+  return this.http.post(`${this.apiUrl}/org-register`, formData);
+}
+
   setToken(token: string): void {
     localStorage.setItem(this.tokenKey, token);
   }
