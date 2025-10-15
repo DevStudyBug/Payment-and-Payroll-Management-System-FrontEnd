@@ -1,1 +1,548 @@
-<p>org-admin-dashboard-component works!</p>
+<!-- organization.component.html -->
+
+<div class="org-wrapper">
+  <!-- Sidebar Navigation -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <span class="logo-icon">$</span>
+        <span class="logo-text">PayFlow</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button 
+        class="nav-item" 
+        [class.active]="activeTab === 'dashboard'"
+        (click)="switchTab('dashboard')">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">Dashboard</span>
+      </button>
+
+      <button 
+        class="nav-item" 
+        [class.active]="activeTab === 'designations'"
+        (click)="switchTab('designations')">
+        <span class="nav-icon">👔</span>
+        <span class="nav-label">Designations</span>
+      </button>
+
+      <button 
+        class="nav-item" 
+        [class.active]="activeTab === 'templates'"
+        (click)="switchTab('templates')">
+        <span class="nav-icon">📋</span>
+        <span class="nav-label">Salary Templates</span>
+      </button>
+
+      <button 
+        class="nav-item" 
+        [class.active]="activeTab === 'employees'"
+        (click)="switchTab('employees')">
+        <span class="nav-icon">👥</span>
+        <span class="nav-label">Employees</span>
+      </button>
+
+      <button 
+        class="nav-item" 
+        [class.active]="activeTab === 'payroll'"
+        (click)="switchTab('payroll')">
+        <span class="nav-icon">💰</span>
+        <span class="nav-label">Payroll</span>
+      </button>
+
+      <button 
+        class="nav-item" 
+        [class.active]="activeTab === 'concerns'"
+        (click)="switchTab('concerns')">
+        <span class="nav-icon">🎫</span>
+        <span class="nav-label">Support Tickets</span>
+      </button>
+
+      <button 
+        class="nav-item logout-btn"
+        (click)="logout()">
+        <span class="nav-icon">🚪</span>
+        <span class="nav-label">Logout</span>
+      </button>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Header -->
+    <header class="page-header">
+      <h1>Organization Admin Dashboard</h1>
+      <div class="header-actions">
+        <span class="user-info">👤 Admin Account</span>
+      </div>
+    </header>
+
+    <!-- Messages -->
+    <div *ngIf="successMessage" class="alert alert-success">
+      <span class="alert-icon">✓</span>
+      {{ successMessage }}
+      <button class="close-btn" (click)="successMessage = ''">×</button>
+    </div>
+
+    <div *ngIf="errorMessage" class="alert alert-error">
+      <span class="alert-icon">✕</span>
+      {{ errorMessage }}
+      <button class="close-btn" (click)="errorMessage = ''">×</button>
+    </div>
+
+    <!-- Dashboard Tab -->
+    <section *ngIf="activeTab === 'dashboard'" class="content-section">
+      <div class="section-header">
+        <h2>Onboarding Overview</h2>
+      </div>
+
+       <div class="dashboard-grid">
+        <!-- Overall Progress Card -->
+        <div class="card progress-card">
+          <div class="card-header">
+            <h3>Overall Progress</h3>
+            <span class="progress-percentage">{{ getProgress() }}%</span>
+          </div>
+          <div class="progress-container">
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="getProgress()">
+                <span class="progress-label">{{ getProgress() }}%</span>
+              </div>
+            </div>
+          </div>
+          <div class="progress-actions">
+            <button class="btn btn-primary btn-sm" (click)="openDocumentModal()" 
+                    *ngIf="onboardingStatus?.documentStage !== 'APPROVED'">
+              📄 Upload Documents
+            </button>
+            <button class="btn btn-primary btn-sm" (click)="openBankModal()"
+                    *ngIf="onboardingStatus?.bankStage !== 'APPROVED'">
+              🏦 Add Bank Details
+            </button>
+          </div>
+        </div>
+
+        <!-- Organization Status -->
+        <div class="card status-card">
+          <h3>Organization Status</h3>
+          <div class="status-badge" [ngClass]="onboardingStatus?.organizationStatus?.toLowerCase()">
+            {{ onboardingStatus?.organizationStatus || 'PENDING' }}
+          </div>
+          <p class="status-message">{{ onboardingStatus?.message }}</p>
+        </div>
+
+        <!-- Document Status -->
+        <div class="card">
+          <h3>Document Status</h3>
+          <div class="status-items">
+            <div class="status-item">
+              <span class="label">Stage:</span>
+              <span class="value">{{ onboardingStatus?.documentStage }}</span>
+            </div>
+            <div class="status-item">
+              <span class="label">Approved:</span>
+              <span class="value">{{ onboardingStatus?.approvedDocuments }} / {{ onboardingStatus?.totalDocuments }}</span>
+            </div>
+            <div class="status-item">
+              <span class="label">Rejected:</span>
+              <span class="value">{{ onboardingStatus?.rejectedDocuments }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bank Status -->
+        <div class="card">
+          <h3>Bank Account Status</h3>
+          <div class="status-items">
+            <div class="status-item">
+              <span class="label">Stage:</span>
+              <span class="value">{{ onboardingStatus?.bankStage }}</span>
+            </div>
+            <div class="status-item" *ngIf="onboardingStatus?.bankVerifiedBy">
+              <span class="label">Verified By:</span>
+              <span class="value">{{ onboardingStatus?.bankVerifiedBy }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Designations Tab -->
+    <section *ngIf="activeTab === 'designations'" class="content-section">
+      <div class="section-header">
+        <h2>Manage Designations</h2>
+      </div>
+
+      <div class="form-card">
+        <h3>Add New Designation</h3>
+        <form [formGroup]="designationForm" (ngSubmit)="addDesignation()">
+          <div class="form-group">
+            <label for="designationName">Designation Name</label>
+            <input 
+              type="text" 
+              id="designationName" 
+              formControlName="name"
+              placeholder="e.g., Software Engineer"
+              class="form-input">
+            <span *ngIf="designationForm.get('name')?.invalid && designationForm.get('name')?.touched" class="error-text">
+              Designation name is required (min 2 characters)
+            </span>
+          </div>
+          <button type="submit" class="btn btn-primary" [disabled]="isLoading || designationForm.invalid">
+            {{ isLoading ? 'Adding...' : 'Add Designation' }}
+          </button>
+        </form>
+      </div>
+
+      <div class="table-card">
+        <h3>Existing Designations</h3>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Designation Name</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let designation of designations">
+                <td>{{ designation.designationId }}</td>
+                <td>{{ designation.name }}</td>
+                <td>
+                  <button class="btn btn-sm btn-secondary">Edit</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div *ngIf="designations.length === 0" class="no-data">
+            No designations found. Create one to get started.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Salary Templates Tab -->
+    <section *ngIf="activeTab === 'templates'" class="content-section">
+      <div class="section-header">
+        <h2>Salary Templates</h2>
+      </div>
+
+      <div class="form-card">
+        <h3>Create Salary Template</h3>
+        <form [formGroup]="salaryTemplateForm" (ngSubmit)="createSalaryTemplate()">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="designation">Designation</label>
+              <select id="designation" formControlName="designation" class="form-input">
+                <option value="">Select Designation</option>
+                <option *ngFor="let d of designations" [value]="d.designationId">
+                  {{ d.name }}
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="basicSalary">Basic Salary</label>
+              <input 
+                type="number" 
+                id="basicSalary" 
+                formControlName="basicSalary"
+                placeholder="0.00"
+                class="form-input">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="hra">HRA</label>
+              <input 
+                type="number" 
+                id="hra" 
+                formControlName="hra"
+                placeholder="0.00"
+                class="form-input">
+            </div>
+            <div class="form-group">
+              <label for="da">DA</label>
+              <input 
+                type="number" 
+                id="da" 
+                formControlName="da"
+                placeholder="0.00"
+                class="form-input">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="pf">PF</label>
+              <input 
+                type="number" 
+                id="pf" 
+                formControlName="pf"
+                placeholder="0.00"
+                class="form-input">
+            </div>
+            <div class="form-group">
+              <label for="otherAllowances">Other Allowances</label>
+              <input 
+                type="number" 
+                id="otherAllowances" 
+                formControlName="otherAllowances"
+                placeholder="0.00"
+                class="form-input">
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" [disabled]="isLoading || salaryTemplateForm.invalid">
+            {{ isLoading ? 'Creating...' : 'Create Template' }}
+          </button>
+        </form>
+      </div>
+
+      <div class="table-card">
+        <h3>Salary Templates</h3>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Designation</th>
+                <th>Gross Salary</th>
+                <th>Net Salary</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let template of salaryTemplates">
+                <td>{{ template.templateId }}</td>
+                <td>{{ template.designation }}</td>
+                <td>₹{{ template.grossSalary | number:'1.2-2' }}</td>
+                <td>₹{{ template.netSalary | number:'1.2-2' }}</td>
+                <td>
+                  <button class="btn btn-sm btn-secondary">View</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div *ngIf="salaryTemplates.length === 0" class="no-data">
+            No templates found. Create one to get started.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Employees Tab -->
+    <section *ngIf="activeTab === 'employees'" class="content-section">
+      <div class="section-header">
+        <h2>Employee Management</h2>
+      </div>
+
+      <div class="form-card">
+        <h3>Register Employee</h3>
+        <form [formGroup]="employeeForm" (ngSubmit)="registerEmployee()">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="firstName">First Name</label>
+              <input 
+                type="text" 
+                id="firstName" 
+                formControlName="firstName"
+                placeholder="First Name"
+                class="form-input">
+            </div>
+            <div class="form-group">
+              <label for="lastName">Last Name</label>
+              <input 
+                type="text" 
+                id="lastName" 
+                formControlName="lastName"
+                placeholder="Last Name"
+                class="form-input">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="dob">Date of Birth</label>
+              <input 
+                type="date" 
+                id="dob" 
+                formControlName="dob"
+                class="form-input">
+            </div>
+            <div class="form-group">
+              <label for="email">Email</label>
+              <input 
+                type="email" 
+                id="email" 
+                formControlName="email"
+                placeholder="email@example.com"
+                class="form-input">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="department">Department</label>
+              <input 
+                type="text" 
+                id="department" 
+                formControlName="department"
+                placeholder="Department"
+                class="form-input">
+            </div>
+            <div class="form-group">
+              <label for="designation">Designation</label>
+              <select id="designation" formControlName="designation" class="form-input">
+                <option value="">Select Designation</option>
+                <option *ngFor="let d of designations" [value]="d.name">
+                  {{ d.name }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" [disabled]="isLoading || employeeForm.invalid">
+            {{ isLoading ? 'Registering...' : 'Register Employee' }}
+          </button>
+        </form>
+      </div>
+
+      <div class="form-card">
+        <h3>Bulk Upload Employees (Excel)</h3>
+        <div class="file-upload">
+          <label for="excelFile" class="file-label">
+            Choose Excel File
+            <input 
+              type="file" 
+              id="excelFile" 
+              accept=".xlsx,.xls"
+              (change)="uploadEmployeesExcel($event)"
+              style="display: none;">
+          </label>
+          <p class="file-hint">Upload an Excel file with employee details</p>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <h3>Employees</h3>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Completion</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let emp of employees">
+                <td>{{ emp.employeeId }}</td>
+                <td>{{ emp.employeeName }}</td>
+                <td>{{ emp.email }}</td>
+                <td>
+                  <span class="status-badge" [ngClass]="emp.status?.toLowerCase()">
+                    {{ emp.status }}
+                  </span>
+                </td>
+                <td>
+                  <div class="progress-bar" style="width: 100px; height: 8px;">
+                    <div class="progress-fill" [style.width.%]="emp.documentCompletion || 0"></div>
+                  </div>
+                  <small>{{ emp.documentCompletion || 0 }}%</small>
+                </td>
+                <td>
+                  <button class="btn btn-sm btn-secondary">View Details</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div *ngIf="employees.length === 0" class="no-data">
+            No employees found.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Payroll Tab -->
+    <section *ngIf="activeTab === 'payroll'" class="content-section">
+      <div class="section-header">
+        <h2>Payroll Management</h2>
+      </div>
+
+      <div class="form-card">
+        <h3>Generate & Submit Payroll</h3>
+        <div class="form-group">
+          <label for="payrollMonth">Select Month</label>
+          <input 
+            type="month" 
+            id="payrollMonth"
+            #monthInput
+            class="form-input">
+        </div>
+        <div class="button-group">
+          <button class="btn btn-primary" (click)="generatePayroll(monthInput.value)" [disabled]="isLoading">
+            {{ isLoading ? 'Generating...' : 'Generate Payroll' }}
+          </button>
+          <button class="btn btn-success" (click)="submitPayroll(monthInput.value)" [disabled]="isLoading">
+            {{ isLoading ? 'Submitting...' : 'Submit to Bank' }}
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Support Tickets Tab -->
+    <section *ngIf="activeTab === 'concerns'" class="content-section">
+      <div class="section-header">
+        <h2>Support Tickets</h2>
+      </div>
+
+      <div class="table-card">
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Ticket Number</th>
+                <th>Employee</th>
+                <th>Category</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let concern of concerns">
+                <td>{{ concern.ticketNumber }}</td>
+                <td>{{ concern.employeeName }}</td>
+                <td>{{ concern.category }}</td>
+                <td>
+                  <span class="badge" [ngClass]="concern.priority?.toLowerCase()">
+                    {{ concern.priority }}
+                  </span>
+                </td>
+                <td>
+                  <span class="status-badge" [ngClass]="concern.status?.toLowerCase()">
+                    {{ concern.status }}
+                  </span>
+                </td>
+                <td>{{ concern.createdAt | date:'short' }}</td>
+                <td>
+                  <button class="btn btn-sm btn-secondary">View</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div *ngIf="concerns.length === 0" class="no-data">
+            No support tickets found.
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>

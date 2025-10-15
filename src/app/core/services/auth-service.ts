@@ -35,7 +35,7 @@ export class AuthService {
         })
       );
   }
-
+//organization
   registerOrganization(formData: any): Observable<any> {
   return this.http.post(`${this.apiUrl}/org-register`, formData);
 }
@@ -80,5 +80,17 @@ export class AuthService {
 
   isLoggedIn(): boolean {
     return !!this.getToken();
+  }
+
+   // Register employee (for org admin)
+  registerEmployee(authentication: any, request: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/register-employee`, request);
+  }
+
+  // Bulk register employees
+  registerEmployeesFromExcel(authentication: any, file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post(`${this.apiUrl}/bulk-register-employees`, formData);
   }
 }

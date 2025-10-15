@@ -11,24 +11,52 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
   // Get token from AuthService
   const token = authService.getToken();
 
-  // Don't add auth headers to external URLs (Cloudinary, etc)
-  const isExternalUrl = req.url.includes('cloudinary.com') || 
-                        req.url.includes('http://') && !req.url.includes('localhost') ||
-                        req.url.includes('https://') && !req.url.includes(window.location.hostname);
+  // Skip auth for public endpoints
+  const publicEndpoints = [
+    '/api/v1/auth/login',
+    '/api/v1/auth/org-register',
+    '/api/v1/auth/verify-email'
+  ];
 
-  // Clone request and add Authorization header only for internal API calls
-  if (token && !isExternalUrl && !req.url.includes('/login') && !req.url.includes('/register')) {
+  const isPublicEndpoint = publicEndpoints.some(endpoint => req.url.includes(endpoint));
+  
+  // Don't add auth headers to external URLs or public endpoints
+  const isExternalUrl = req.url.includes('cloudinary.com') || 
+                        (req.url.includes('http://') && !req.url.includes('localhost')) ||
+                        (req.url.includes('https://') && !req.url.includes('localhost'));
+
+  // Clone request and add Authorization header
+  if (token && !isExternalUrl && !isPublicEndpoint) {
+    // Don't override Content-Type if it's multipart/form-data (for file uploads)
+    const headers: any = {
+      Authorization: `Bearer ${token}`
+    };
+
+    // Only set Content-Type for non-file uploads
+    if (!req.headers.has('Content-Type') && !(req.body instanceof FormData)) {
+      headers['Content-Type'] = 'application/json';
+    }
+
     req = req.clone({
-      setHeaders: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+      setHeaders: headers
+    });
+
+    console.log('Request with token:', {
+      url: req.url,
+      hasToken: !!token,
+      headers: req.headers.keys()
     });
   }
 
   // Handle response and errors
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
+      console.error('HTTP Error:', {
+        status: error.status,
+        message: error.message,
+        url: req.url
+      });
+
       // Handle 401 Unauthorized
       if (error.status === 401) {
         console.warn('Unauthorized: Token expired or invalid');
@@ -38,7 +66,9 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
 
       // Handle 403 Forbidden
       if (error.status === 403) {
-        console.warn('Forbidden: Insufficient permissions');
+        console.error('Forbidden: Insufficient permissions or onboarding incomplete');
+        console.error('User roles:', authService.getUserRoles());
+        console.error('Requested URL:', req.url);
       }
 
       return throwError(() => error);

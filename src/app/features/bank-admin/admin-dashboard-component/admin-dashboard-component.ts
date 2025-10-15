@@ -1,6 +1,6 @@
 // admin-dashboard.component.ts
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil, finalize } from 'rxjs/operators';
@@ -72,7 +72,9 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   constructor(
     private authService: AuthService,
     private bankAdminService: BankAdminService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
+
   ) {}
 
   ngOnInit(): void {
@@ -241,6 +243,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         next: () => {
           this.showAlert('✅ Document approved successfully!');
           this.fetchAllOrganizations();
+          this.cdr.detectChanges();
         },
         error: (err) => {
           console.error(err);
