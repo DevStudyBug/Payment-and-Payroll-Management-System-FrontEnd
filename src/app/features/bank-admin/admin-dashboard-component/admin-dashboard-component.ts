@@ -135,6 +135,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
           this.allOrganizations = data || [];
           this.calculateStats();
           this.applyOrgFilter();
+          this.cdr.detectChanges();
         },
         error: (err) => {
           console.error('Error fetching organizations:', err);
@@ -267,6 +268,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         next: () => {
           this.showAlert('✅ Bank details approved successfully!');
           this.fetchAllOrganizations();
+          this.cdr.detectChanges();
         },
         error: (err) => {
           console.error(err);
@@ -294,6 +296,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
           this.paymentRequests = res.content || [];
           this.totalPages = res.totalPages || 0;
           this.totalPaymentRequests = res.totalElements || 0;
+          this.cdr.detectChanges();
         },
         error: (err) => {
           console.warn('Payment requests not available:', err);
@@ -310,6 +313,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (res) => {
           this.selectedPaymentRequest = res;
+          this.cdr.detectChanges();
         },
         error: (err) => {
           console.error(err);
@@ -333,6 +337,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
           this.showAlert('✅ Payment approved successfully!');
           this.fetchPaymentRequests();
           this.selectedPaymentRequest = null;
+          this.cdr.detectChanges();
         },
         error: (err) => {
           console.error(err);
@@ -356,6 +361,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
           this.showAlert('✅ Payment disbursed successfully!');
           this.fetchPaymentRequests();
           this.selectedPaymentRequest = null;
+          this.cdr.detectChanges();
         },
         error: (err) => {
           console.error(err);

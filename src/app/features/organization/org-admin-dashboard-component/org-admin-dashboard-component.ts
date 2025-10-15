@@ -1,5 +1,5 @@
 // org-admin-dashboard-component.ts
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormArray } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -14,6 +14,7 @@ import { finalize, Subject, takeUntil } from 'rxjs';
   templateUrl: './org-admin-dashboard-component.html',
   styleUrl: './org-admin-dashboard-component.css'
 })
+
 export class OrgAdminDashboardComponent implements OnInit {
   // State Management
   activeTab: string = 'dashboard';
@@ -51,7 +52,8 @@ export class OrgAdminDashboardComponent implements OnInit {
     private orgService: OrganizationService,
     private authService: AuthService,
     private fb: FormBuilder,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -149,12 +151,14 @@ export class OrgAdminDashboardComponent implements OnInit {
         next: (data) => {
           console.log('Onboarding Status:', data);
           this.onboardingStatus = data;
+          this.cdr.detectChanges();
           
           // Load other data only if onboarding is complete
           if (this.isOnboardingComplete()) {
             this.loadDesignations();
             this.loadSalaryTemplates();
             this.loadEmployees();
+            this.cdr.detectChanges(); 
           }
         },
         error: (error) => {
@@ -170,6 +174,8 @@ export class OrgAdminDashboardComponent implements OnInit {
       .subscribe({
         next: (data) => {
           this.designations = data || [];
+          this.cdr.detectChanges();
+          
         },
         error: (error) => {
           console.error('Failed to load designations', error);
@@ -185,6 +191,7 @@ export class OrgAdminDashboardComponent implements OnInit {
           this.salaryTemplates = data.content || [];
           this.totalElements = data.totalElements || 0;
           this.totalPages = data.totalPages || 0;
+          this.cdr.detectChanges();
         },
         error: (error) => {
           console.error('Failed to load salary templates', error);
@@ -198,6 +205,7 @@ export class OrgAdminDashboardComponent implements OnInit {
       .subscribe({
         next: (data) => {
           this.employees = data || [];
+            this.cdr.detectChanges();
         },
         error: (error) => {
           console.error('Failed to load employees', error);
@@ -213,6 +221,7 @@ export class OrgAdminDashboardComponent implements OnInit {
           this.concerns = data.content || [];
           this.totalElements = data.totalElements || 0;
           this.totalPages = data.totalPages || 0;
+            this.cdr.detectChanges();
         },
         error: (error) => {
           console.error('Failed to load concerns', error);
@@ -276,6 +285,7 @@ export class OrgAdminDashboardComponent implements OnInit {
           this.showSuccess('✅ Documents uploaded successfully');
           this.closeDocumentModal();
           this.loadOnboardingStatus();
+            this.cdr.detectChanges();
         },
         error: (error) => {
           console.error('Failed to upload documents:', error);
@@ -297,6 +307,7 @@ export class OrgAdminDashboardComponent implements OnInit {
   submitBankDetails(): void {
     if (this.bankDetailsForm.invalid) {
       this.showError('Please fill all required bank details correctly');
+        this.cdr.detectChanges();
       return;
     }
 
@@ -324,6 +335,7 @@ export class OrgAdminDashboardComponent implements OnInit {
           this.showSuccess('✅ Bank details submitted successfully');
           this.closeBankModal();
           this.loadOnboardingStatus();
+            this.cdr.detectChanges();
         },
         error: (error) => {
           console.error('Failed to submit bank details:', error);
@@ -356,6 +368,7 @@ export class OrgAdminDashboardComponent implements OnInit {
           this.showSuccess('✅ Designation added successfully');
           this.designationForm.reset();
           this.loadDesignations();
+            this.cdr.detectChanges();
         },
         error: (error) => {
           this.showError(error.error?.message || 'Failed to add designation');
@@ -385,6 +398,7 @@ export class OrgAdminDashboardComponent implements OnInit {
           this.showSuccess('✅ Salary template created successfully');
           this.salaryTemplateForm.reset();
           this.loadSalaryTemplates();
+            this.cdr.detectChanges();
         },
         error: (error) => {
           this.showError(error.error?.message || 'Failed to create salary template');
@@ -414,6 +428,7 @@ export class OrgAdminDashboardComponent implements OnInit {
           this.showSuccess(`✅ Employee registered successfully. Username: ${response.username}`);
           this.employeeForm.reset();
           this.loadEmployees();
+          this.cdr.detectChanges();
         },
         error: (error) => {
           this.showError(error.error?.message || 'Failed to register employee');
@@ -457,6 +472,7 @@ export class OrgAdminDashboardComponent implements OnInit {
           }
           
           this.loadEmployees();
+          this.cdr.detectChanges();
         },
         error: (error) => {
           this.showError(error.error?.message || 'Failed to upload employees');
@@ -484,6 +500,7 @@ export class OrgAdminDashboardComponent implements OnInit {
       .subscribe({
         next: (response) => {
           this.showSuccess(response.message || '✅ Payroll generated successfully');
+          this.cdr.detectChanges();
         },
         error: (error) => {
           this.showError(error.error?.message || 'Failed to generate payroll');
@@ -510,6 +527,7 @@ export class OrgAdminDashboardComponent implements OnInit {
       .subscribe({
         next: (response) => {
           this.showSuccess(response.message || '✅ Payroll submitted to bank successfully');
+          this.cdr.detectChanges();
         },
         error: (error) => {
           this.showError(error.error?.message || 'Failed to submit payroll');

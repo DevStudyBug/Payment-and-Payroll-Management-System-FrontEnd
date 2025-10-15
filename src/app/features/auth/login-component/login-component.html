@@ -56,6 +56,15 @@
         </div>
       </div>
 
+      <!-- reCAPTCHA -->
+      <div class="form-group captcha">
+        <re-captcha 
+          (resolved)="onCaptchaResolved($event)" 
+          siteKey="6LdJr-srAAAAAF1476eJrhpXbpAeAqLbqSIAxBkT">
+        </re-captcha>
+        <div *ngIf="captchaError" class="error">{{ captchaError }}</div>
+      </div>
+
       <!-- Error Message from Server -->
       <div *ngIf="errorMessage" class="error">
         {{ errorMessage }}
