@@ -12,8 +12,8 @@ export class OrganizationService {
 
   constructor(private http: HttpClient,
       private authService: AuthService
-
-  ) {}
+  ) 
+  {}
 
   // Get headers with JWT token
  private getHeaders(): HttpHeaders {
@@ -24,12 +24,9 @@ export class OrganizationService {
       'Content-Type': 'application/json'
     });
   }
-
-
-
   // Get headers for multipart form data (no Content-Type, browser sets it)
   private getHeadersForFormData(): HttpHeaders {
-    const token = localStorage.getItem('authToken');
+    const token = this.authService.getToken();
     console.log('OrganizationService - Token for FormData:', token ? 'Present' : 'Missing');
     return new HttpHeaders({
       'Authorization': `Bearer ${token}`

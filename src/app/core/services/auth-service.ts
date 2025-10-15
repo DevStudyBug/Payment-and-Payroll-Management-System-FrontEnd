@@ -1,14 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { Observable, BehaviorSubject } from 'rxjs';  //handling asynchronous data and state changes
+import { tap } from 'rxjs/operators';  //saving token
 import { LoginRequest, LoginResponse, UserInfo } from '../models/auth.models';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:8080/api/v1/auth'; // Update with your API URL
+  private apiUrl = 'http://localhost:8080/api/v1/auth'; // API URL
   private tokenKey = 'auth_token';
   private userInfoKey = 'user_info';
   
