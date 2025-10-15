@@ -97,15 +97,29 @@
         <h2>Onboarding Overview</h2>
       </div>
 
-      <div class="dashboard-grid">
-        <!-- Progress Card -->
+       <div class="dashboard-grid">
+        <!-- Overall Progress Card -->
         <div class="card progress-card">
-          <h3>Overall Progress</h3>
+          <div class="card-header">
+            <h3>Overall Progress</h3>
+            <span class="progress-percentage">{{ getProgress() }}%</span>
+          </div>
           <div class="progress-container">
             <div class="progress-bar">
-              <div class="progress-fill" [style.width.%]="getProgress()"></div>
+              <div class="progress-fill" [style.width.%]="getProgress()">
+                <span class="progress-label">{{ getProgress() }}%</span>
+              </div>
             </div>
-            <span class="progress-text">{{ getProgress() }}% Complete</span>
+          </div>
+          <div class="progress-actions">
+            <button class="btn btn-primary btn-sm" (click)="openDocumentModal()" 
+                    *ngIf="onboardingStatus?.documentStage !== 'APPROVED'">
+              📄 Upload Documents
+            </button>
+            <button class="btn btn-primary btn-sm" (click)="openBankModal()"
+                    *ngIf="onboardingStatus?.bankStage !== 'APPROVED'">
+              🏦 Add Bank Details
+            </button>
           </div>
         </div>
 

@@ -1,7 +1,7 @@
-// organization.component.ts
+// org-admin-dashboard-component.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormArray } from '@angular/forms';
 import { Router } from '@angular/router';
 import { OrganizationService } from '../../../core/services/organization-service';
 import { AuthService } from '../../../core/services/auth-service';
@@ -11,7 +11,7 @@ import { finalize, Subject, takeUntil } from 'rxjs';
   selector: 'app-org-admin-dashboard-component',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
-    templateUrl: './org-admin-dashboard-component.html',
+  templateUrl: './org-admin-dashboard-component.html',
   styleUrl: './org-admin-dashboard-component.css'
 })
 export class OrgAdminDashboardComponent implements OnInit {
@@ -20,6 +20,10 @@ export class OrgAdminDashboardComponent implements OnInit {
   isLoading = false;
   successMessage = '';
   errorMessage = '';
+
+  // Modal States
+  showDocumentModal = false;
+  showBankModal = false;
 
   // Data
   onboardingStatus: any = null;
@@ -32,6 +36,8 @@ export class OrgAdminDashboardComponent implements OnInit {
   designationForm!: FormGroup;
   salaryTemplateForm!: FormGroup;
   employeeForm!: FormGroup;
+  documentUploadForm!: FormGroup;
+  bankDetailsForm!: FormGroup;
 
   // Pagination
   currentPage = 0;
@@ -51,9 +57,6 @@ export class OrgAdminDashboardComponent implements OnInit {
   ngOnInit(): void {
     this.initializeForms();
     this.loadOnboardingStatus();
-    this.loadDesignations();
-    this.loadSalaryTemplates();
-    this.loadEmployees();
   }
 
   ngOnDestroy(): void {
@@ -84,19 +87,75 @@ export class OrgAdminDashboardComponent implements OnInit {
       designation: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]]
     });
+
+    // Document Upload Form with FormArray for multiple documents
+    this.documentUploadForm = this.fb.group({
+      documents: this.fb.array([this.createDocumentFormGroup()])
+    });
+
+    // Bank Details Form
+    this.bankDetailsForm = this.fb.group({
+      accountNumber: ['', [Validators.required, Validators.minLength(9)]],
+      ifscCode: ['', [Validators.required, Validators.pattern(/^[A-Z]{4}0[A-Z0-9]{6}$/)]],
+      bankName: ['', [Validators.required, Validators.minLength(3)]],
+      accountHolderName: ['', [Validators.required, Validators.minLength(3)]],
+      branchName: ['', Validators.minLength(3)]
+    });
   }
 
-  // Load Data Methods
+  // Create a single document form group
+  createDocumentFormGroup(): FormGroup {
+    return this.fb.group({
+      file: [null, Validators.required],
+      fileName: ['', Validators.required],
+      fileType: ['', Validators.required]
+    });
+  }
+
+  // Get documents form array
+  get documentsArray(): FormArray {
+    return this.documentUploadForm.get('documents') as FormArray;
+  }
+
+  // Add document field
+  addDocumentField(): void {
+    this.documentsArray.push(this.createDocumentFormGroup());
+  }
+
+  // Remove document field
+  removeDocumentField(index: number): void {
+    if (this.documentsArray.length > 1) {
+      this.documentsArray.removeAt(index);
+    }
+  }
+
+  // Handle file selection
+  onFileSelected(event: any, index: number): void {
+    const file = event.target.files[0];
+    if (file) {
+      this.documentsArray.at(index).patchValue({ file: file });
+    }
+  }
+
+  // Load Onboarding Status
   loadOnboardingStatus(): void {
+    this.isLoading = true;
     this.orgService.getOnboardingStatus()
       .pipe(
         takeUntil(this.destroy$),
-        finalize(() => console.log('Onboarding status loaded'))
+        finalize(() => this.isLoading = false)
       )
       .subscribe({
         next: (data) => {
           console.log('Onboarding Status:', data);
           this.onboardingStatus = data;
+          
+          // Load other data only if onboarding is complete
+          if (this.isOnboardingComplete()) {
+            this.loadDesignations();
+            this.loadSalaryTemplates();
+            this.loadEmployees();
+          }
         },
         error: (error) => {
           console.error('Failed to load onboarding status', error);
@@ -107,79 +166,168 @@ export class OrgAdminDashboardComponent implements OnInit {
 
   loadDesignations(): void {
     this.orgService.getAllDesignations()
-      .pipe(
-        takeUntil(this.destroy$),
-        finalize(() => console.log('Designations loaded'))
-      )
+      .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data) => {
-          console.log('Designations:', data);
           this.designations = data || [];
         },
         error: (error) => {
           console.error('Failed to load designations', error);
-          this.designations = [];
         }
       });
   }
 
   loadSalaryTemplates(): void {
     this.orgService.getAllSalaryTemplates(this.currentPage, this.pageSize)
-      .pipe(
-        takeUntil(this.destroy$),
-        finalize(() => console.log('Salary templates loaded'))
-      )
+      .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data) => {
-          console.log('Salary Templates:', data);
           this.salaryTemplates = data.content || [];
           this.totalElements = data.totalElements || 0;
           this.totalPages = data.totalPages || 0;
         },
         error: (error) => {
           console.error('Failed to load salary templates', error);
-          this.showError('Failed to load salary templates');
-          this.salaryTemplates = [];
         }
       });
   }
 
   loadEmployees(status: string = 'ALL'): void {
     this.orgService.getEmployeesByStatus(status)
-      .pipe(
-        takeUntil(this.destroy$),
-        finalize(() => console.log('Employees loaded'))
-      )
+      .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data) => {
-          console.log('Employees:', data);
           this.employees = data || [];
         },
         error: (error) => {
           console.error('Failed to load employees', error);
-          this.showError('Failed to load employees');
-          this.employees = [];
         }
       });
   }
 
   loadConcerns(): void {
     this.orgService.getAllConcerns(undefined, undefined, undefined, this.currentPage, this.pageSize)
-      .pipe(
-        takeUntil(this.destroy$),
-        finalize(() => console.log('Concerns loaded'))
-      )
+      .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data) => {
-          console.log('Concerns:', data);
           this.concerns = data.content || [];
           this.totalElements = data.totalElements || 0;
           this.totalPages = data.totalPages || 0;
         },
         error: (error) => {
           console.error('Failed to load concerns', error);
-          this.showError('Failed to load concerns');
-          this.concerns = [];
+        }
+      });
+  }
+
+  // Document Upload
+  openDocumentModal(): void {
+    this.showDocumentModal = true;
+    // Reset form
+    this.documentUploadForm = this.fb.group({
+      documents: this.fb.array([this.createDocumentFormGroup()])
+    });
+  }
+
+  closeDocumentModal(): void {
+    this.showDocumentModal = false;
+  }
+
+  uploadDocuments(): void {
+    if (this.documentUploadForm.invalid) {
+      this.showError('Please fill all required fields correctly');
+      return;
+    }
+
+    if (!confirm('Are you sure you want to upload these documents?')) {
+      return;
+    }
+
+    this.isLoading = true;
+    const formData = new FormData();
+    const metaArray: any[] = [];
+
+    // Build FormData and meta array
+    this.documentsArray.controls.forEach((control, index) => {
+      const file = control.get('file')?.value;
+      const fileName = control.get('fileName')?.value;
+      const fileType = control.get('fileType')?.value;
+
+      if (file) {
+        formData.append('file', file);
+        metaArray.push({ fileName, fileType });
+      }
+    });
+
+    // Append meta as JSON string
+    formData.append('meta', JSON.stringify(metaArray));
+
+    this.orgService.uploadDocument(
+      this.documentsArray.controls.map(c => c.get('file')?.value).filter(f => f),
+      metaArray
+    )
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.isLoading = false)
+      )
+      .subscribe({
+        next: (response) => {
+          console.log('Documents uploaded:', response);
+          this.showSuccess('✅ Documents uploaded successfully');
+          this.closeDocumentModal();
+          this.loadOnboardingStatus();
+        },
+        error: (error) => {
+          console.error('Failed to upload documents:', error);
+          this.showError(error.error?.message || 'Failed to upload documents');
+        }
+      });
+  }
+
+  // Bank Details Submission
+  openBankModal(): void {
+    this.showBankModal = true;
+    this.bankDetailsForm.reset();
+  }
+
+  closeBankModal(): void {
+    this.showBankModal = false;
+  }
+
+  submitBankDetails(): void {
+    if (this.bankDetailsForm.invalid) {
+      this.showError('Please fill all required bank details correctly');
+      return;
+    }
+
+    if (!confirm('Are you sure you want to submit these bank details?')) {
+      return;
+    }
+
+    this.isLoading = true;
+    const bankData = this.bankDetailsForm.value;
+
+    // Determine if it's first submission or reupload
+    const isReupload = this.onboardingStatus?.bankStage === 'REJECTED';
+    const apiCall = isReupload 
+      ? this.orgService.reuploadBankDetails(bankData)
+      : this.orgService.addBankDetails(bankData);
+
+    apiCall
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.isLoading = false)
+      )
+      .subscribe({
+        next: (response) => {
+          console.log('Bank details submitted:', response);
+          this.showSuccess('✅ Bank details submitted successfully');
+          this.closeBankModal();
+          this.loadOnboardingStatus();
+        },
+        error: (error) => {
+          console.error('Failed to submit bank details:', error);
+          this.showError(error.error?.message || 'Failed to submit bank details');
         }
       });
   }
@@ -205,13 +353,11 @@ export class OrgAdminDashboardComponent implements OnInit {
       )
       .subscribe({
         next: (response) => {
-          console.log('Designation added:', response);
           this.showSuccess('✅ Designation added successfully');
           this.designationForm.reset();
           this.loadDesignations();
         },
         error: (error) => {
-          console.error('Failed to add designation:', error);
           this.showError(error.error?.message || 'Failed to add designation');
         }
       });
@@ -236,13 +382,11 @@ export class OrgAdminDashboardComponent implements OnInit {
       )
       .subscribe({
         next: (response) => {
-          console.log('Salary template created:', response);
           this.showSuccess('✅ Salary template created successfully');
           this.salaryTemplateForm.reset();
           this.loadSalaryTemplates();
         },
         error: (error) => {
-          console.error('Failed to create salary template:', error);
           this.showError(error.error?.message || 'Failed to create salary template');
         }
       });
@@ -267,13 +411,11 @@ export class OrgAdminDashboardComponent implements OnInit {
       )
       .subscribe({
         next: (response) => {
-          console.log('Employee registered:', response);
           this.showSuccess(`✅ Employee registered successfully. Username: ${response.username}`);
           this.employeeForm.reset();
           this.loadEmployees();
         },
         error: (error) => {
-          console.error('Failed to register employee:', error);
           this.showError(error.error?.message || 'Failed to register employee');
         }
       });
@@ -289,7 +431,7 @@ export class OrgAdminDashboardComponent implements OnInit {
     }
 
     if (!confirm('Are you sure you want to upload this Excel file with employee data?')) {
-      event.target.value = ''; // Reset file input
+      event.target.value = '';
       return;
     }
 
@@ -299,12 +441,11 @@ export class OrgAdminDashboardComponent implements OnInit {
         takeUntil(this.destroy$),
         finalize(() => {
           this.isLoading = false;
-          event.target.value = ''; // Reset file input
+          event.target.value = '';
         })
       )
       .subscribe({
         next: (response) => {
-          console.log('Bulk upload response:', response);
           const successCount = response.successfulRegistrations?.length || 0;
           const failedCount = response.failedRegistrations?.length || 0;
           
@@ -318,7 +459,6 @@ export class OrgAdminDashboardComponent implements OnInit {
           this.loadEmployees();
         },
         error: (error) => {
-          console.error('Failed to upload employees:', error);
           this.showError(error.error?.message || 'Failed to upload employees');
         }
       });
@@ -343,11 +483,9 @@ export class OrgAdminDashboardComponent implements OnInit {
       )
       .subscribe({
         next: (response) => {
-          console.log('Payroll generated:', response);
           this.showSuccess(response.message || '✅ Payroll generated successfully');
         },
         error: (error) => {
-          console.error('Failed to generate payroll:', error);
           this.showError(error.error?.message || 'Failed to generate payroll');
         }
       });
@@ -371,11 +509,9 @@ export class OrgAdminDashboardComponent implements OnInit {
       )
       .subscribe({
         next: (response) => {
-          console.log('Payroll submitted:', response);
           this.showSuccess(response.message || '✅ Payroll submitted to bank successfully');
         },
         error: (error) => {
-          console.error('Failed to submit payroll:', error);
           this.showError(error.error?.message || 'Failed to submit payroll');
         }
       });
@@ -383,6 +519,12 @@ export class OrgAdminDashboardComponent implements OnInit {
 
   // Tab Navigation
   switchTab(tab: string): void {
+    // Check if onboarding is complete for restricted tabs
+    if (!this.isOnboardingComplete() && tab !== 'dashboard') {
+      this.showError('Complete your onboarding (100%) to access this feature');
+      return;
+    }
+
     this.activeTab = tab;
     this.clearMessages();
 
@@ -391,6 +533,10 @@ export class OrgAdminDashboardComponent implements OnInit {
       this.loadConcerns();
     } else if (tab === 'employees') {
       this.loadEmployees();
+    } else if (tab === 'templates') {
+      this.loadSalaryTemplates();
+    } else if (tab === 'designations') {
+      this.loadDesignations();
     }
   }
 
@@ -399,18 +545,18 @@ export class OrgAdminDashboardComponent implements OnInit {
     if (!this.onboardingStatus) return 0;
     
     let progress = 0;
-    
-    if (this.onboardingStatus.documentStage === 'APPROVED') {
-      progress += 33;
-    }
-    if (this.onboardingStatus.bankStage === 'APPROVED') {
-      progress += 33;
-    }
-    if (this.onboardingStatus.organizationStatus === 'ACTIVE') {
-      progress += 34;
-    }
+    if (this.onboardingStatus.documentStage === 'APPROVED') progress += 50;
+    if (this.onboardingStatus.bankStage === 'APPROVED') progress += 50;
     
     return progress;
+  }
+
+  isOnboardingComplete(): boolean {
+    return this.getProgress() === 100;
+  }
+
+  canAccessFeature(): boolean {
+    return this.isOnboardingComplete();
   }
 
   showSuccess(message: string): void {
