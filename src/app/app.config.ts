@@ -7,6 +7,7 @@ import { JwtInterceptor } from './core/interceptors/jwt-interceptor';
 
 
 
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),

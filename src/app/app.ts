@@ -1,11 +1,9 @@
-// src/app/app.ts
+// src/app/app.component.ts (Rename from app.ts)
 import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
-  standalone: true,
-  imports: [RouterOutlet],
-  template: `<router-outlet></router-outlet>`,
+  // REMOVED: standalone: true (Resolves NG8001/router-outlet conflict)
+  template: `<router-outlet></router-outlet>`, 
 })
 export class App {}

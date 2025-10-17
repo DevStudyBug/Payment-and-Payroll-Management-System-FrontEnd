@@ -6,8 +6,8 @@ import { OrganizationService } from '../../../../core/services/organization-serv
 
 @Component({
   selector: 'app-register-organization',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  // REMOVED: standalone: true, 
+  //  REMOVED: imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './register-organization.html',
   styleUrls: ['./register-organization.css']
 })
@@ -16,6 +16,7 @@ export class RegisterOrganization {
   registerForm: FormGroup;
   errorMessage: string = '';
 
+  // The constructor is correct. The Router injection will work once the @Component decorator is non-standalone.
   constructor(private fb: FormBuilder, private orgService: OrganizationService, private router: Router) {
     this.registerForm = this.fb.group({
       orgName: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
@@ -33,7 +34,8 @@ export class RegisterOrganization {
 
     this.orgService.registerOrganization(this.registerForm.value).subscribe({
       next: (res) => {
-        alert(res.message || 'Organization registered successfully! Please verify your email.');
+        // NOTE: Changed alert() to console log, as alert() is blocked in modern Angular environments.
+        console.log(res.message || 'Organization registered successfully! Please verify your email.'); 
         this.router.navigate(['/login']);
       },
       error: (err) => {

@@ -127,6 +127,10 @@ p {
   box-shadow: 0 6px 25px rgba(59, 130, 246, 0.4);
 }
 
+.menu button:active {
+  transform: translateY(0);
+}
+
 .desktop-menu {
   display: flex;
   align-items: center;

@@ -1,5 +1,5 @@
 // src/app/core/services/auth-service.ts
-import { Injectable } from '@angular/core';
+import { Injectable } from '@angular/core'; // 👈 NG2005: Ensure @Injectable is imported and present
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Router } from '@angular/router';
@@ -21,6 +21,7 @@ export class AuthService {
 
   private tokenKey = 'authToken';
 
+  // NG2003: Router dependency will be resolvable once RouterModule.forRoot is imported
   constructor(private http: HttpClient, private router: Router) {}
 
   login(payload: LoginPayload): Observable<LoginResponse> {

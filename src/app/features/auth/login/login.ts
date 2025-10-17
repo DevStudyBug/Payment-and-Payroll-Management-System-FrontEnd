@@ -1,15 +1,13 @@
 // src/app/features/auth/login/login.ts
 import { Component } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth-service';
-import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-login',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  // Removed: standalone: true
+  // Removed: imports: [CommonModule, ReactiveFormsModule, RouterModule] - Moved to AuthModule
   templateUrl: './login.html',
   styleUrls: ['./login.css']
 })
